@@ -1,12 +1,11 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const AD_WATCH_SECONDS = 15;
-
-export default function DonationBar() {
-  const [step, setStep] = useState("closed"); // closed | menu | qris | ad | ad-done
-  const [countdown, setCountdown] = useState(AD_WATCH_SECONDS);
-  const timerRef = useRef(null);
+export default function DonationBar({ directLink }) {
+  const [step, setStep] = useState("closed"); // closed | menu | qris | ad | ad-done | ad-unavailable
+  const waitingRef = useRef(false);
+  const minWaitTimerRef = useRef(null);
+  const minWaitDoneRef = useRef(false);
 
   function openMenu() {
     setStep("menu");
@@ -14,26 +13,48 @@ export default function DonationBar() {
 
   function close() {
     setStep("closed");
-    clearInterval(timerRef.current);
+    waitingRef.current = false;
+    clearTimeout(minWaitTimerRef.current);
   }
 
   function startAd() {
+    if (!directLink) {
+      setStep("ad-unavailable");
+      return;
+    }
+
+    const opened = window.open(directLink, "_blank");
+    if (!opened) {
+      setStep("ad-unavailable");
+      return;
+    }
+
     setStep("ad");
-    setCountdown(AD_WATCH_SECONDS);
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timerRef.current);
-          setStep("ad-done");
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1000);
+    waitingRef.current = true;
+    minWaitDoneRef.current = false;
+
+    // minimal wait supaya nggak langsung "selesai" walau tab kebuka sekejap
+    clearTimeout(minWaitTimerRef.current);
+    minWaitTimerRef.current = setTimeout(() => {
+      minWaitDoneRef.current = true;
+    }, 4000);
   }
 
-  useEffect(() => () => clearInterval(timerRef.current), []);
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === "visible" && waitingRef.current && minWaitDoneRef.current) {
+        waitingRef.current = false;
+        setStep("ad-done");
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleVisibility);
+      clearTimeout(minWaitTimerRef.current);
+    };
+  }, []);
 
   return (
     <>
@@ -75,7 +96,7 @@ export default function DonationBar() {
                   <span className="sheet-option-icon">📺</span>
                   <div className="sheet-option-text">
                     <strong>Tonton Iklan</strong>
-                    <span>Gratis, cukup tonton sampai selesai</span>
+                    <span>Gratis, buka iklan di tab baru</span>
                   </div>
                   <span className="chev">›</span>
                 </button>
@@ -94,14 +115,14 @@ export default function DonationBar() {
 
             {step === "ad" && (
               <>
-                <h2 className="sheet-title">Memutar Iklan</h2>
+                <h2 className="sheet-title">Iklan Terbuka di Tab Baru</h2>
                 <div className="ad-slot">
                   <span style={{ fontSize: 40 }}>📺</span>
                   <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--ios-label-secondary)" }}>
-                    Slot iklan — sisa {countdown} detik
+                    Lihat sebentar, lalu balik lagi ke tab ini
                   </p>
                 </div>
-                <p className="sheet-sub" style={{ textAlign: "center" }}>Tunggu sampai selesai untuk menyelesaikan dukungan.</p>
+                <p className="sheet-sub" style={{ textAlign: "center" }}>Halaman ini otomatis lanjut begitu kamu kembali.</p>
               </>
             )}
 
@@ -110,6 +131,17 @@ export default function DonationBar() {
                 <h2 className="sheet-title">Terima kasih! 🎉</h2>
                 <p className="sheet-sub">Dukunganmu lewat iklan sudah tercatat. Sangat membantu developer.</p>
                 <button className="btn" onClick={close}>Selesai</button>
+              </>
+            )}
+
+            {step === "ad-unavailable" && (
+              <>
+                <h2 className="sheet-title">Iklan Belum Bisa Dibuka</h2>
+                <p className="sheet-sub">
+                  Kemungkinan pop-up diblokir browser, atau admin belum setting link iklan. Coba izinkan pop-up untuk situs ini, atau donasi lewat QRIS dulu.
+                </p>
+                <button className="btn" onClick={() => setStep("qris")}>Pakai QRIS</button>
+                <button className="btn secondary" onClick={close}>Tutup</button>
               </>
             )}
           </div>
