@@ -20,12 +20,10 @@ export default function RootLayout({ children }) {
           }}
         />
 
-        {/* Google AdSense */}
+        {/* Adsterra Popunder - aktif di seluruh halaman */}
         <Script
-          id="adsense"
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2293760086712206"
-          crossOrigin="anonymous"
+          id="adsterra-popunder"
+          src="https://pl30882979.effectivecpmnetwork.com/e4/c1/70/e4c1704dd04bcd3e4740fd29feaf2f9f.js"
           strategy="afterInteractive"
         />
 
