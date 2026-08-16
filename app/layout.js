@@ -20,6 +20,15 @@ export default function RootLayout({ children }) {
           }}
         />
 
+        {/* Google AdSense */}
+        <Script
+          id="adsense"
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2293760086712206"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         <header className="topbar">
           <a href="/" className="brand">
             <span className="dot" />
