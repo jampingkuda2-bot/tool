@@ -6,6 +6,8 @@ export const metadata = {
   description: "PDF, downloader TikTok, dan konverter media langsung di browser",
 };
 
+const MONETAG_DIRECT_LINK = process.env.NEXT_PUBLIC_MONETAG_DIRECT_LINK;
+
 export default function RootLayout({ children }) {
   return (
     <html lang="id">
@@ -17,7 +19,7 @@ export default function RootLayout({ children }) {
           </a>
         </header>
         {children}
-        <DonationBar />
+        <DonationBar directLink={MONETAG_DIRECT_LINK} />
       </body>
     </html>
   );
