@@ -1,13 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-
-const ADSTERRA_SMARTLINK = "https://www.effectivecpmnetwork.com/nzt3ekyt?key=727664aa94b774485ce2e4eabf21d1a5";
+import { useState } from "react";
 
 export default function DonationBar() {
-  const [step, setStep] = useState("closed"); // closed | menu | qris | ad | ad-done | ad-unavailable
-  const waitingRef = useRef(false);
-  const minWaitTimerRef = useRef(null);
-  const minWaitDoneRef = useRef(false);
+  const [step, setStep] = useState("closed"); // closed | menu | qris | ad-done
 
   function openMenu() {
     setStep("menu");
@@ -15,42 +10,21 @@ export default function DonationBar() {
 
   function close() {
     setStep("closed");
-    waitingRef.current = false;
-    clearTimeout(minWaitTimerRef.current);
   }
 
-  function startAd() {
-    const opened = window.open(ADSTERRA_SMARTLINK, "_blank");
-    if (!opened) {
-      setStep("ad-unavailable");
-      return;
-    }
+  function watchAd() {
+    // Bersihin script lama biar nggak numpuk kalau diklik berkali-kali
+    const old = document.getElementById("monetag-vignette");
+    if (old) old.remove();
 
-    setStep("ad");
-    waitingRef.current = true;
-    minWaitDoneRef.current = false;
+    const script = document.createElement("script");
+    script.id = "monetag-vignette";
+    script.dataset.zone = "11592262";
+    script.src = "https://n6wxm.com/vignette.min.js";
+    (document.body || document.documentElement).appendChild(script);
 
-    clearTimeout(minWaitTimerRef.current);
-    minWaitTimerRef.current = setTimeout(() => {
-      minWaitDoneRef.current = true;
-    }, 4000);
+    setStep("ad-done");
   }
-
-  useEffect(() => {
-    function handleVisibility() {
-      if (document.visibilityState === "visible" && waitingRef.current && minWaitDoneRef.current) {
-        waitingRef.current = false;
-        setStep("ad-done");
-      }
-    }
-    document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("focus", handleVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", handleVisibility);
-      clearTimeout(minWaitTimerRef.current);
-    };
-  }, []);
 
   return (
     <>
@@ -72,7 +46,7 @@ export default function DonationBar() {
       </nav>
 
       {step !== "closed" && (
-        <div className="sheet-backdrop" onClick={step === "ad" ? undefined : close}>
+        <div className="sheet-backdrop" onClick={close}>
           <div className="sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
 
@@ -88,11 +62,11 @@ export default function DonationBar() {
                   </div>
                   <span className="chev">›</span>
                 </button>
-                <button className="sheet-option" onClick={startAd}>
+                <button className="sheet-option" onClick={watchAd}>
                   <span className="sheet-option-icon">📺</span>
                   <div className="sheet-option-text">
                     <strong>Tonton Iklan</strong>
-                    <span>Gratis, buka iklan di tab baru</span>
+                    <span>Muncul sebentar, bisa ditutup pakai X</span>
                   </div>
                   <span className="chev">›</span>
                 </button>
@@ -109,35 +83,11 @@ export default function DonationBar() {
               </>
             )}
 
-            {step === "ad" && (
-              <>
-                <h2 className="sheet-title">Iklan Terbuka di Tab Baru</h2>
-                <div className="ad-slot">
-                  <span style={{ fontSize: 40 }}>📺</span>
-                  <p style={{ margin: "8px 0 0", fontSize: 13, color: "var(--ios-label-secondary)" }}>
-                    Lihat sebentar, lalu balik lagi ke tab ini
-                  </p>
-                </div>
-                <p className="sheet-sub" style={{ textAlign: "center" }}>Halaman ini otomatis lanjut begitu kamu kembali.</p>
-              </>
-            )}
-
             {step === "ad-done" && (
               <>
                 <h2 className="sheet-title">Terima kasih! 🎉</h2>
-                <p className="sheet-sub">Dukunganmu lewat iklan sudah tercatat. Sangat membantu developer.</p>
+                <p className="sheet-sub">Sebentar lagi muncul iklan kecil di layar (bisa ditutup pakai tombol X). Dukunganmu sangat membantu developer.</p>
                 <button className="btn" onClick={close}>Selesai</button>
-              </>
-            )}
-
-            {step === "ad-unavailable" && (
-              <>
-                <h2 className="sheet-title">Iklan Belum Bisa Dibuka</h2>
-                <p className="sheet-sub">
-                  Kemungkinan pop-up diblokir browser. Coba izinkan pop-up untuk situs ini, atau donasi lewat QRIS dulu.
-                </p>
-                <button className="btn" onClick={() => setStep("qris")}>Pakai QRIS</button>
-                <button className="btn secondary" onClick={close}>Tutup</button>
               </>
             )}
           </div>
